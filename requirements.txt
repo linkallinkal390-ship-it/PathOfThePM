@@ -1,0 +1,23 @@
+# Core
+Django==5.0.6
+djangorestframework==3.15.1
+
+# Authentication
+djangorestframework-simplejwt==5.3.1
+PyJWT==2.8.0
+
+# Filtering
+django-filter==24.2
+
+# Documentation
+drf-yasg==1.21.7
+
+# Database
+psycopg2-binary==2.9.9
+
+# Environment
+python-decouple==3.8
+
+# Utilities
+django-cors-headers==4.3.1
+django-extensions==3.2.3
