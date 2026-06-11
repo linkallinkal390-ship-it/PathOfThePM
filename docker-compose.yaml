@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: drf_db
+      POSTGRES_USER: drf_user
+      POSTGRES_PASSWORD: drf_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U drf_user -d drf_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - drf_network
+
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: django_app
+    restart: always
+    command: >
+      python manage.py makemigrations &&
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=django-insecure-dev-key-change-in-production
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[::1]
+      - DATABASE_ENGINE=django.db.backends.postgresql
+      - DATABASE_NAME=drf_db
+      - DATABASE_USER=drf_user
+      - DATABASE_PASSWORD=drf_password
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - drf_network
+
+volumes:
+  postgres_data:
+
+networks:
+  drf_network:
+    driver: bridge
