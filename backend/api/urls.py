@@ -1,10 +1,5 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-)
 from . import views
 
 # Создаем роутер
@@ -16,9 +11,7 @@ router.register(r'sessions', views.SessionViewSet, basename='session')
 # URL-паттерны
 urlpatterns = [
     path('auth/register/', views.RegisterView.as_view()),
-    path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('auth/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('auth/login/', views.LoginView.as_view()),
     path('auht/merinda/', include(router.urls)),
 ]
 
