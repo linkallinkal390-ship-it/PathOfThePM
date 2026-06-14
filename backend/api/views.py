@@ -530,4 +530,3 @@ class SessionViewSet(BaseViewSet):
             data=serializer.data,
             message='Session extended successfully'
         )
-    
