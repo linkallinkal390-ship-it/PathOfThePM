@@ -18,7 +18,6 @@
 
 
 ### ### 2. Логин (получение токена)
-bash
 curl -X POST http://localhost:8000/api/auth/login/ \
   -H "Content-Type: application/json" \
   -d '{
@@ -28,7 +27,6 @@ curl -X POST http://localhost:8000/api/auth/login/ \
 
 
 Сохрани полученный token — он нужен для всех остальных запросов:
-bash
 TOKEN="полученный_токен"
 
 
@@ -43,7 +41,6 @@ TOKEN="полученный_токен"
 
 
 ### 3. Список пользователей (с фильтрацией и пагинацией)
-bash
 curl -X GET "http://localhost:8000/api/auht/merinda/users/?role=user&is_active=true&search=иван&ordering=email&page=1" \
   -H "Authorization: Token $TOKEN"
 
@@ -51,7 +48,6 @@ curl -X GET "http://localhost:8000/api/auht/merinda/users/?role=user&is_active=t
 
 
 ### 4. Получить пользователя по ID
-bash
 curl -X GET "http://localhost:8000/api/auht/merinda/users/{user_id}/" \
   -H "Authorization: Token $TOKEN"
 
@@ -75,7 +71,6 @@ curl -X POST http://localhost:8000/api/auht/merinda/users/ \
 
 
 ### 6. Обновить пользователя (полное обновление)
-bash
 curl -X PUT "http://localhost:8000/api/auht/merinda/users/{user_id}/" \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
@@ -91,7 +86,6 @@ curl -X PUT "http://localhost:8000/api/auht/merinda/users/{user_id}/" \
 
 
 ### 7. Частично обновить пользователя
-bash
 curl -X PATCH "http://localhost:8000/api/auht/merinda/users/{user_id}/" \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
@@ -103,7 +97,6 @@ curl -X PATCH "http://localhost:8000/api/auht/merinda/users/{user_id}/" \
 
 
 ### 8. Удалить пользователя
-bash
 curl -X DELETE "http://localhost:8000/api/auht/merinda/users/{user_id}/" \
   -H "Authorization: Token $TOKEN"
 
@@ -111,7 +104,6 @@ curl -X DELETE "http://localhost:8000/api/auht/merinda/users/{user_id}/" \
 
 
 ### 9. Получить текущего пользователя (/me)
-bash
 curl -X GET "http://localhost:8000/api/auht/merinda/users/me/" \
   -H "Authorization: Token $TOKEN"
 
@@ -124,7 +116,6 @@ curl -X GET "http://localhost:8000/api/auht/merinda/users/me/" \
 
 
 ### 10. Список результатов (с фильтрацией)
-bash
 curl -X GET "http://localhost:8000/api/auht/merinda/results/?reputation=50&office_health=80&ordering=-budget&page=1" \
   -H "Authorization: Token $TOKEN"
 
@@ -132,7 +123,6 @@ curl -X GET "http://localhost:8000/api/auht/merinda/results/?reputation=50&offic
 
 
 ### 11. Получить результат по ID
-bash
 curl -X GET "http://localhost:8000/api/auht/merinda/results/{result_id}/" \
   -H "Authorization: Token $TOKEN"
 
@@ -140,7 +130,6 @@ curl -X GET "http://localhost:8000/api/auht/merinda/results/{result_id}/" \
 
 
 ### 12. Создать результат
-bash
 curl -X POST http://localhost:8000/api/auht/merinda/results/ \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
@@ -156,7 +145,6 @@ curl -X POST http://localhost:8000/api/auht/merinda/results/ \
 
 
 ### 13. Обновить результат (полное)
-bash
 curl -X PUT "http://localhost:8000/api/auht/merinda/results/{result_id}/" \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
@@ -172,7 +160,6 @@ curl -X PUT "http://localhost:8000/api/auht/merinda/results/{result_id}/" \
 
 ### 
 ### 14. Частично обновить результат
-bash
 curl -X PATCH "http://localhost:8000/api/auht/merinda/results/{result_id}/" \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
@@ -184,7 +171,7 @@ curl -X PATCH "http://localhost:8000/api/auht/merinda/results/{result_id}/" \
 
 
 ### 15. Удалить результат
-bash
+
 curl -X DELETE "http://localhost:8000/api/auht/merinda/results/{result_id}/" \
   -H "Authorization: Token $TOKEN"
 
@@ -192,7 +179,7 @@ curl -X DELETE "http://localhost:8000/api/auht/merinda/results/{result_id}/" \
 
 
 ### 16. Статистика результата (/stats)
-bash
+
 curl -X GET "http://localhost:8000/api/auht/merinda/results/{result_id}/stats/" \
   -H "Authorization: Token $TOKEN"
 
@@ -205,7 +192,7 @@ curl -X GET "http://localhost:8000/api/auht/merinda/results/{result_id}/stats/" 
 
 
 ### 17. Список сессий (с фильтрацией)
-bash
+
 curl -X GET "http://localhost:8000/api/auht/merinda/sessions/?user_id={user_id}&result_id={result_id}&start_date=2024-01-01&end_date=2024-12-31&ordering=-start_date&page=1" \
   -H "Authorization: Token $TOKEN"
 
@@ -213,7 +200,7 @@ curl -X GET "http://localhost:8000/api/auht/merinda/sessions/?user_id={user_id}&
 
 
 ### 18. Получить сессию по ID
-bash
+
 curl -X GET "http://localhost:8000/api/auht/merinda/sessions/{session_id}/" \
   -H "Authorization: Token $TOKEN"
 
@@ -221,7 +208,7 @@ curl -X GET "http://localhost:8000/api/auht/merinda/sessions/{session_id}/" \
 
 
 ### 19. Создать сессию
-bash
+
 curl -X POST http://localhost:8000/api/auht/merinda/sessions/ \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
@@ -236,7 +223,7 @@ curl -X POST http://localhost:8000/api/auht/merinda/sessions/ \
 
 
 ### 20. Обновить сессию (полное)
-bash
+
 curl -X PUT "http://localhost:8000/api/auht/merinda/sessions/{session_id}/" \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
@@ -251,7 +238,7 @@ curl -X PUT "http://localhost:8000/api/auht/merinda/sessions/{session_id}/" \
 
 
 ### 21. Частично обновить сессию
-bash
+
 curl -X PATCH "http://localhost:8000/api/auht/merinda/sessions/{session_id}/" \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
@@ -263,7 +250,7 @@ curl -X PATCH "http://localhost:8000/api/auht/merinda/sessions/{session_id}/" \
 
 
 ### 22. Удалить сессию
-bash
+
 curl -X DELETE "http://localhost:8000/api/auht/merinda/sessions/{session_id}/" \
   -H "Authorization: Token $TOKEN"
 
@@ -271,7 +258,7 @@ curl -X DELETE "http://localhost:8000/api/auht/merinda/sessions/{session_id}/" \
 
 
 ### 23. Детали сессии (/details)
-bash
+
 curl -X GET "http://localhost:8000/api/auht/merinda/sessions/{session_id}/details/" \
   -H "Authorization: Token $TOKEN"
 
@@ -279,7 +266,7 @@ curl -X GET "http://localhost:8000/api/auht/merinda/sessions/{session_id}/detail
 
 
 ### 24. Мои сессии (/my_sessions)
-bash
+
 curl -X GET "http://localhost:8000/api/auht/merinda/sessions/my_sessions/?page=1" \
   -H "Authorization: Token $TOKEN"
 
@@ -287,7 +274,7 @@ curl -X GET "http://localhost:8000/api/auht/merinda/sessions/my_sessions/?page=1
 
 
 ### 25. Сессии по диапазону дат (/by_date_range)
-bash
+
 curl -X GET "http://localhost:8000/api/auht/merinda/sessions/by_date_range/?from_date=2024-01-01&to_date=2024-12-31&page=1" \
   -H "Authorization: Token $TOKEN"
 
@@ -295,7 +282,7 @@ curl -X GET "http://localhost:8000/api/auht/merinda/sessions/by_date_range/?from
 
 
 26. Продлить сессию (/extend)
-bash
+
 curl -X POST "http://localhost:8000/api/auht/merinda/sessions/{session_id}/extend/" \
   -H "Authorization: Token $TOKEN" \
   -H "Content-Type: application/json" \
