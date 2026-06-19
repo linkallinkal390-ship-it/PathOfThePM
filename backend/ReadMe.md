@@ -292,85 +292,110 @@ curl -X POST "http://localhost:8000/api/auht/merinda/sessions/{session_id}/exten
 
 
 
-📋 Сводная таблица всех эндпоинтов
+📋 Итоговый список ручек (25 штук)
 
 
-###	Метод	URL	Действие
 
-1	POST	/api/auth/register/	Регистрация
-
-
-2	POST	/api/auth/login/	Логин
+#	Метод	URL
 
 
-3	GET	/api/auht/merinda/users/	Список пользователей
+
+1	POST	/api/auth/register/
 
 
-4	GET	/api/auht/merinda/users/{id}/	Пользователь по ID
+
+2	POST	/api/auth/login/
 
 
-5	POST	/api/auht/merinda/users/	Создать пользователя
+
+3	GET	/api/auht/merinda/users/
 
 
-6	PUT	/api/auht/merinda/users/{id}/	Обновить пользователя
+
+4	GET	/api/auht/merinda/users/{id}/
 
 
-7	PATCH	/api/auht/merinda/users/{id}/	Частично обновить
+
+5	POST	/api/auht/merinda/users/
 
 
-8	DELETE	/api/auht/merinda/users/{id}/	Удалить пользователя
+
+6	PUT	/api/auht/merinda/users/{id}/
 
 
-9	GET	/api/auht/merinda/users/me/	Текущий пользователь
+
+7	PATCH	/api/auht/merinda/users/{id}/
 
 
-10	GET	/api/auht/merinda/results/	Список результатов
+
+8	DELETE	/api/auht/merinda/users/{id}/
 
 
-11	GET	/api/auht/merinda/results/{id}/	Результат по ID
+
+9	GET	/api/auht/merinda/users/me/
 
 
-12	POST	/api/auht/merinda/results/	Создать результат
+
+10	GET	/api/auht/merinda/results/
 
 
-13	PUT	/api/auht/merinda/results/{id}/	Обновить результат
+
+11	GET	/api/auht/merinda/results/{id}/
 
 
-14	PATCH	/api/auht/merinda/results/{id}/	Частично обновить
+
+12	POST	/api/auht/merinda/results/
 
 
-15	DELETE	/api/auht/merinda/results/{id}/	Удалить результат
+
+13	PUT	/api/auht/merinda/results/{id}/
 
 
-16	GET	/api/auht/merinda/results/{id}/stats/	Статистика результата
+
+14	PATCH	/api/auht/merinda/results/{id}/
 
 
-17	GET	/api/auht/merinda/sessions/	Список сессий
+
+15	DELETE	/api/auht/merinda/results/{id}/
 
 
-18	GET	/api/auht/merinda/sessions/{id}/	Сессия по ID
+
+16	GET	/api/auht/merinda/sessions/
 
 
-19	POST	/api/auht/merinda/sessions/	Создать сессию
+
+17	GET	/api/auht/merinda/sessions/{id}/
 
 
-20	PUT	/api/auht/merinda/sessions/{id}/	Обновить сессию
+
+18	POST	/api/auht/merinda/sessions/
 
 
-21	PATCH	/api/auht/merinda/sessions/{id}/	Частично обновить
+
+19	PUT	/api/auht/merinda/sessions/{id}/
 
 
-22	DELETE	/api/auht/merinda/sessions/{id}/	Удалить сессию
+
+20	PATCH	/api/auht/merinda/sessions/{id}/
 
 
-23	GET	/api/auht/merinda/sessions/{id}/details/	Детали сессии
+
+21	DELETE	/api/auht/merinda/sessions/{id}/
 
 
-24	GET	/api/auht/merinda/sessions/my_sessions/	Мои сессии
+
+22	GET	/api/auht/merinda/sessions/{id}/details/
 
 
-25	GET	/api/auht/merinda/sessions/by_date_range/	Сессии за период
+
+23	GET	/api/auht/merinda/sessions/my_sessions/
 
 
-26	POST	/api/auht/merinda/sessions/{id}/extend/	Продлить сессию
+
+24	GET	/api/auht/merinda/sessions/by_date_range/
+
+
+
+25	POST	/api/auht/merinda/sessions/{id}/extend/
+
 

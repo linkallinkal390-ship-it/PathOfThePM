@@ -40,12 +40,9 @@ class User(AbstractUser):
     email = models.EmailField(max_length=255, unique=True)
     first_name = models.CharField(max_length=30)
     sur_name = models.CharField(max_length=64)
-    
-    # Это должно быть ПОЛЕМ модели, а не вложенным классом!
     role = models.CharField(
         max_length=10,
-        choices=ROLE_CHOICES,
-        default=ROLE_USER,
+        choices=ROLE_CHOICES
     )
     
     created_at = models.DateTimeField(auto_now_add=True)

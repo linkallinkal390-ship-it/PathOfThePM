@@ -260,18 +260,24 @@ class ResultViewSet(BaseViewSet):
         Создать новый результат
         """
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            # Проверка бизнес-логики
-            budget = serializer.validated_data.get('budget', 0)
-            if budget < 0:
-                raise BusinessLogicError(detail='Budget cannot be negative')
-            
-            self.perform_create(serializer)
-            return created_response(
-                data=serializer.data,
-                message='Result created successfully'
+        if not serializer.is_valid():
+            return validation_error_response(
+                errors=serializer.errors,
+                message='Validation error'
             )
-        raise ResultNotFoundException(detail='Validation error', errors=serializer.errors)
+        
+        # Проверка бизнес-логики
+        budget = serializer.validated_data.get('budget', 0)
+        if budget < 0:
+            raise BusinessLogicError(
+                detail={'error': {'message': 'Budget cannot be negative', 'errors': []}}
+            )
+        
+        self.perform_create(serializer)
+        return created_response(
+            data=serializer.data,
+            message='Result created successfully'
+        )
     
     def update(self, request, *args, **kwargs):
         """
@@ -281,13 +287,17 @@ class ResultViewSet(BaseViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         
-        if serializer.is_valid():
-            self.perform_update(serializer)
-            return updated_response(
-                data=serializer.data,
-                message='Result updated successfully'
+        if not serializer.is_valid():
+            return validation_error_response(
+                errors=serializer.errors,
+                message='Validation error'
             )
-        raise ResultNotFoundException(detail='Validation error', errors=serializer.errors)
+        
+        self.perform_update(serializer)
+        return updated_response(
+            data=serializer.data,
+            message='Result updated successfully'
+        )
     
     def destroy(self, request, *args, **kwargs):
         """
