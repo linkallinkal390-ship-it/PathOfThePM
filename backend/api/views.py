@@ -297,23 +297,6 @@ class ResultViewSet(BaseViewSet):
         self.perform_destroy(instance)
         return deleted_response(message='Result deleted successfully')
     
-    @action(detail=True, methods=['get'])
-    def stats(self, request, pk=None):
-        """
-        Получить статистику результата
-        """
-        instance = self.get_object()
-        stats_data = {
-            'total_quests': instance.CountCompletedQuest,
-            'reputation': instance.reputation,
-            'office_health': instance.office_health,
-            'budget': float(instance.budget)
-        }
-        return success_response(
-            data=stats_data,
-            message='Result stats retrieved successfully'
-        )
-
 
 class SessionViewSet(BaseViewSet):
     """
