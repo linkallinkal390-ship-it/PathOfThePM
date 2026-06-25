@@ -66,7 +66,7 @@ class Result(models.Model):
     CountCompletedQuest	= models.SmallIntegerField(default=1)
     reputation = models.SmallIntegerField(default=0)
     evaluationGraphConstruction = models.SmallIntegerField(default=0)
-    budget = models.DecimalField(max_digits=12, decimal_places=2)
+    budget = models.DecimalField(max_digits=12, decimal_places=2)                           
     office_health = models.SmallIntegerField(default=0)
 
     def __str__(self):
