@@ -140,9 +140,6 @@ class BaseViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(BaseViewSet):
-    """
-    ViewSet для работы с пользователями
-    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = CustomPageNumberPagination
@@ -150,37 +147,28 @@ class UserViewSet(BaseViewSet):
     search_fields = ['email', 'first_name', 'sur_name']
     ordering_fields = ['created_at', 'email', 'first_name']
     ordering = ['-created_at']
-    
+
     def get_queryset(self):
         queryset = super().get_queryset()
         role = self.request.query_params.get('role')
         is_active = self.request.query_params.get('is_active')
-        
+
         if role:
             queryset = queryset.filter(role=role)
         if is_active is not None:
             queryset = queryset.filter(is_active=is_active.lower() == 'true')
-            
+
         return queryset
-    
+
     def retrieve(self, request, *args, **kwargs):
-        """
-        Получить пользователя по ID
-        """
-        try:
-            instance = self.get_object()
-            serializer = self.get_serializer(instance)
-            return success_response(
-                data=serializer.data,
-                message='User retrieved successfully'
-            )
-        except User.DoesNotExist:
-            raise UserNotFoundException()
-    
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(
+            data=serializer.data,
+            message='User retrieved successfully'
+        )
+
     def create(self, request, *args, **kwargs):
-        """
-        Создать нового пользователя
-        """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             self.perform_create(serializer)
@@ -188,46 +176,36 @@ class UserViewSet(BaseViewSet):
                 data=serializer.data,
                 message='User created successfully'
             )
-        raise UserNotFoundException(detail='Validation error', errors=serializer.errors)
-    
+        raise ValidationError(serializer.errors)
+
     def update(self, request, *args, **kwargs):
-        """
-        Обновить пользователя
-        """
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        
+
         if serializer.is_valid():
             self.perform_update(serializer)
             return updated_response(
                 data=serializer.data,
                 message='User updated successfully'
             )
-        raise UserNotFoundException(detail='Validation error', errors=serializer.errors)
-    
+        raise ValidationError(serializer.errors)
+
     def destroy(self, request, *args, **kwargs):
-        """
-        Удалить пользователя
-        """
         instance = self.get_object()
         self.perform_destroy(instance)
         return deleted_response(message='User deleted successfully')
-    
+
     @action(detail=False, methods=['get'])
     def me(self, request):
-        """
-        Получить текущего пользователя
-        """
         if not request.user.is_authenticated:
             raise UnauthorizedAccessError()
-        
+
         serializer = self.get_serializer(request.user)
         return success_response(
             data=serializer.data,
             message='Current user retrieved successfully'
         )
-
 
 class ResultViewSet(BaseViewSet):
     """
