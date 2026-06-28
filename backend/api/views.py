@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Q
+from rest_framework.serializers import ValidationError
 
 from .models import User, Result, Session
 from .serializers import (
@@ -69,9 +70,6 @@ class RegisterView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-
-
-
 
 class LoginView(APIView):
     serializer_class = LoginSerializer

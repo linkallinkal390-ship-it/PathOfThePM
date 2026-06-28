@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+import sys
 from pathlib import Path
 from decouple import config
 
@@ -24,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-jy*g7#*af)6emgnv+1r+8@%$l36bt&^5-#kh%$*%ey4#9(3_q@')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-jy-g7-af-6emgnv-1r-8-l36bt-5-kh-ey4-9-3-q')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
@@ -76,6 +77,7 @@ REST_FRAMEWORK = {
     ],
     
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
@@ -137,7 +139,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': config('DATABASE_ENGINE', default='django.db.backends.sqlite3'),
+        'ENGINE': config('DATABASE_ENGINE', default='django.db.backends.sqlite3 '),
         'NAME': config('DATABASE_NAME', default=os.path.join(BASE_DIR, 'db.sqlite3')),
         'USER': config('DATABASE_USER', default=''),
         'PASSWORD': config('DATABASE_PASSWORD', default=''),

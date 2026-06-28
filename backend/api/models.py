@@ -63,7 +63,7 @@ class User(AbstractUser):
 class Result(models.Model):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True)
     finalConstructionDate = models.DateTimeField(auto_now_add=True)
-    CountCompletedQuest	= models.SmallIntegerField(default=1)
+    CountCompletedQuest = models.SmallIntegerField(default=1)
     reputation = models.SmallIntegerField(default=0)
     evaluationGraphConstruction = models.SmallIntegerField(default=0)
     budget = models.DecimalField(max_digits=12, decimal_places=2)                           

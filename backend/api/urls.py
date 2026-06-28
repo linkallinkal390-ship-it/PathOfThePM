@@ -12,7 +12,7 @@ router.register(r'sessions', views.SessionViewSet, basename='session')
 urlpatterns = [
     path('auth/register/', views.RegisterView.as_view()),
     path('auth/login/', views.LoginView.as_view()),
-    path('auht/merinda/', include(router.urls)),
+    path('', include(router.urls)),
 ]
 
 api_urlpatterns = router.urls

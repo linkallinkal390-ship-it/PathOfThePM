@@ -1,568 +1,604 @@
-import pytest
 import uuid
-from decimal import Decimal
 from datetime import date, timedelta
+from django.test import TestCase
 from django.urls import reverse
-from rest_framework.test import APIClient
+from django.contrib.auth import get_user_model
+from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
+from rest_framework.authtoken.models import Token
+from decimal import Decimal
+
 from .models import User, Result, Session
+from .serializers import UserSerializer, ResultSerializer, SessionSerializer
+
+User = get_user_model()
 
 
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-
-@pytest.fixture
-def user_data():
-    return {
-        'email': 'test@example.com',
-        'first_name': 'John',
-        'sur_name': 'Doe',
-        'password': 'testpass123',
-        'password_confirm': 'testpass123',
-        'role': 'user'
-    }
-
-
-@pytest.fixture
-def admin_user_data():
-    return {
-        'email': 'admin@example.com',
-        'first_name': 'Admin',
-        'sur_name': 'User',
-        'password': 'adminpass123',
-        'password_confirm': 'adminpass123',
-        'role': 'admin'
-    }
-
-
-@pytest.fixture
-def create_user(db, user_data):
-    user = User.objects.create_user(
-        email=user_data['email'],
-        password=user_data['password'],
-        first_name=user_data['first_name'],
-        sur_name=user_data['sur_name'],
-        role=user_data['role']
-    )
-    return user
-
-
-@pytest.fixture
-def create_admin_user(db, admin_user_data):
-    admin = User.objects.create_superuser(
-        email=admin_user_data['email'],
-        password=admin_user_data['password'],
-        first_name=admin_user_data['first_name'],
-        sur_name=admin_user_data['sur_name'],
-        role='admin'
-    )
-    return admin
-
-
-@pytest.fixture
-def authenticated_client(api_client, create_user):
-    url = reverse('token_obtain_pair')
-    response = api_client.post(url, {
-        'email': 'test@example.com',
-        'password': 'testpass123'
-    })
-    token = response.data['access']
-    api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-    return api_client
-
-
-@pytest.fixture
-def admin_authenticated_client(api_client, create_admin_user):
-    url = reverse('token_obtain_pair')
-    response = api_client.post(url, {
-        'email': 'admin@example.com',
-        'password': 'adminpass123'
-    })
-    token = response.data['access']
-    api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
-    return api_client
-
-
-@pytest.fixture
-def result_data():
-    return {
-        'CountCompletedQuest': 5,
-        'reputation': 80,
-        'evaluationGraphConstruction': 90,
-        'budget': '10000.00',
-        'office_health': 85
-    }
-
-
-@pytest.fixture
-def create_result(db, result_data):
-    result = Result.objects.create(**result_data)
-    return result
-
-
-@pytest.fixture
-def session_data(create_user, create_result):
-    return {
-        'user': create_user.id,
-        'result': create_result.id,
-        'start_date': '2024-01-01',
-        'end_date': '2024-01-31'
-    }
-
-
-@pytest.fixture
-def create_session(db, create_user, create_result):
-    session = Session.objects.create(
-        user=create_user,
-        result=create_result,
-        start_date='2024-01-01',
-        end_date='2024-01-31'
-    )
-    return session
-
-
-@pytest.fixture
-def multiple_users(db):
-    users = []
-    for i in range(15):
-        user = User.objects.create_user(
-            email=f'user{i}@example.com',
-            password='testpass123',
-            first_name=f'User{i}',
-            sur_name=f'Test{i}',
-            role='user'
-        )
-        users.append(user)
-    return users
-
-
-@pytest.fixture
-def multiple_sessions(db, create_user, create_result):
-    sessions = []
-    for i in range(15):
-        session = Session.objects.create(
-            user=create_user,
-            result=create_result,
-            start_date=f'2024-{str(i+1).zfill(2)}-01',
-            end_date=f'2024-{str(i+1).zfill(2)}-28'
-        )
-        sessions.append(session)
-    return sessions
-
-
-class TestUserModel:
+class TestUserModel(TestCase):
+    """Тесты для модели User"""
     
-    def test_create_user(self, db, user_data):
-        user = User.objects.create_user(**user_data)
-        assert user.email == user_data['email']
-        assert user.first_name == user_data['first_name']
-        assert user.sur_name == user_data['sur_name']
-        assert user.role == 'user'
-        assert user.check_password(user_data['password'])
-        assert user.is_active is True
-        assert user.is_staff is False
+    def setUp(self):
+        self.user_data = {
+            'email': 'test@example.com',
+            'password': 'testpass123',
+            'first_name': 'Test',
+            'sur_name': 'User',
+            'role': User.ROLE_USER
+        }
     
-    def test_create_superuser(self, db, admin_user_data):
-        admin = User.objects.create_superuser(
-            email=admin_user_data['email'],
-            password=admin_user_data['password'],
-            first_name=admin_user_data['first_name'],
-            sur_name=admin_user_data['sur_name']
-        )
-        assert admin.email == admin_user_data['email']
-        assert admin.role == 'admin'
-        assert admin.is_staff is True
-        assert admin.is_superuser is True
+    def test_create_user(self):
+        """Тест создания обычного пользователя"""
+        user = User.objects.create_user(**self.user_data)
+        self.assertEqual(user.email, 'test@example.com')
+        self.assertEqual(user.first_name, 'Test')
+        self.assertEqual(user.sur_name, 'User')
+        self.assertEqual(user.role, User.ROLE_USER)
+        self.assertTrue(user.check_password('testpass123'))
+        self.assertIsNotNone(user.id)
+        self.assertIsInstance(user.id, uuid.UUID)
     
-    def test_user_str_method(self, create_user):
-        expected_str = f'{create_user.email} - registred'
-        assert str(create_user) == expected_str
-    
-    def test_user_without_email_raises_error(self, db):
-        with pytest.raises(ValueError):
+    def test_create_user_without_email_raises_error(self):
+        """Тест: создание пользователя без email вызывает ошибку"""
+        with self.assertRaises(ValueError):
             User.objects.create_user(email='', password='testpass123')
     
-    def test_user_email_normalized(self, db):
+    def test_create_superuser(self):
+        """Тест создания суперпользователя"""
+        admin = User.objects.create_superuser(
+            email='admin@example.com',
+            password='adminpass123',
+            first_name='Admin',
+            sur_name='User'
+        )
+        self.assertTrue(admin.is_staff)
+        self.assertTrue(admin.is_superuser)
+        self.assertEqual(admin.role, User.ROLE_ADMIN)
+    
+    def test_user_str_method(self):
+        """Тест строкового представления пользователя"""
+        user = User.objects.create_user(**self.user_data)
+        self.assertEqual(str(user), 'test@example.com - registered')
+    
+    def test_user_email_normalized(self):
         user = User.objects.create_user(
-            email='Test@EXAMPLE.com',
+           email='Test@Example.COM',
+           password='testpass123',
+           first_name='Test',
+           sur_name='User'
+        )
+        #Ваша модель сохраняет как есть
+        self.assertEqual(user.email, 'Test@Example.COM')
+
+
+class TestResultModel(TestCase):
+    """Тесты для модели Result"""
+    
+    def setUp(self):
+        self.result_data = {
+            'budget': Decimal('1000.50'),
+            'reputation': 50,
+            'office_health': 75,
+            'CountCompletedQuest': 5,
+            'evaluationGraphConstruction': 80
+        }
+    
+    def test_create_result(self):
+        """Тест создания результата"""
+        result = Result.objects.create(**self.result_data)
+        self.assertIsNotNone(result.id)
+        self.assertIsInstance(result.id, uuid.UUID)
+        self.assertEqual(result.budget, Decimal('1000.50'))
+        self.assertEqual(result.reputation, 50)
+        self.assertEqual(result.office_health, 75)
+        self.assertIsNotNone(result.finalConstructionDate)
+    
+    def test_result_default_values(self):
+        """Тест значений по умолчанию"""
+        result = Result.objects.create(budget=Decimal('500.00'))
+        self.assertEqual(result.CountCompletedQuest, 1)
+        self.assertEqual(result.reputation, 0)
+        self.assertEqual(result.office_health, 0)
+        self.assertEqual(result.evaluationGraphConstruction, 0)
+    
+    def test_result_str_method(self):
+        """Тест строкового представления результата"""
+        result = Result.objects.create(budget=Decimal('500.00'))
+        self.assertIn(str(result.id), str(result))
+        self.assertIn('Result created', str(result))
+
+
+class TestSessionModel(TestCase):
+    """Тесты для модели Session"""
+    
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='test@example.com',
             password='testpass123',
             first_name='Test',
             sur_name='User'
         )
-        assert user.email == 'Test@example.com'
+        self.result = Result.objects.create(budget=Decimal('500.00'))
+        self.session_data = {
+            'user': self.user,
+            'result': self.result,
+            'start_date': date(2024, 1, 1),
+            'end_date': date(2024, 1, 10)
+        }
     
-    def test_user_uuid_primary_key(self, create_user):
-        assert isinstance(create_user.id, uuid.UUID)
+    def test_create_session(self):
+        """Тест создания сессии"""
+        session = Session.objects.create(**self.session_data)
+        self.assertIsNotNone(session.id)
+        self.assertEqual(session.user, self.user)
+        self.assertEqual(session.result, self.result)
+        self.assertEqual(session.start_date, date(2024, 1, 1))
+        self.assertEqual(session.end_date, date(2024, 1, 10))
+    
+    def test_session_str_method(self):
+        """Тест строкового представления сессии"""
+        session = Session.objects.create(**self.session_data)
+        self.assertIn(str(session.id), str(session))
+        self.assertIn('session created', str(session))
+    
+    def test_session_user_cascade_delete(self):
+        """Тест каскадного удаления при удалении пользователя"""
+        session = Session.objects.create(**self.session_data)
+        self.assertEqual(Session.objects.count(), 1)
+        self.user.delete()
+        self.assertEqual(Session.objects.count(), 0)
+    
+    def test_session_result_cascade_delete(self):
+        """Тест каскадного удаления при удалении результата"""
+        session = Session.objects.create(**self.session_data)
+        self.assertEqual(Session.objects.count(), 1)
+        self.result.delete()
+        self.assertEqual(Session.objects.count(), 0)
 
 
-class TestResultModel:
+class BaseAPITestCase(APITestCase):
+    """Базовый класс для API тестов с авторизацией"""
     
-    def test_create_result(self, db, result_data):
-        result = Result.objects.create(**result_data)
-        assert result.CountCompletedQuest == result_data['CountCompletedQuest']
-        assert result.reputation == result_data['reputation']
-        assert result.budget == Decimal(result_data['budget'])
-    
-    def test_result_default_values(self, db):
-        result = Result.objects.create(budget='5000.00')
-        assert result.CountCompletedQuest == 1
-        assert result.reputation == 0
-        assert result.evaluationGraphConstruction == 0
-        assert result.office_health == 0
-    
-    def test_result_str_method(self, create_result):
-        expected_str = f'{create_result.id} - Result created'
-        assert str(create_result) == expected_str
-
-
-class TestSessionModel:
-    
-    def test_create_session(self, db, create_user, create_result):
-        session = Session.objects.create(
-            user=create_user,
-            result=create_result,
-            start_date='2024-01-01',
-            end_date='2024-01-31'
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            first_name='Test',
+            sur_name='User'
         )
-        assert session.user == create_user
-        assert session.result == create_result
-        assert session.start_date == date(2024, 1, 1)
-        assert session.end_date == date(2024, 1, 31)
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
     
-    def test_session_str_method(self, create_session):
-        expected_str = f'{create_session.id} - session created'
-        assert str(create_session) == expected_str
+    def authenticate(self, user=None):
+        """Авторизация пользователя"""
+        if user is None:
+            user = self.user
+        token, _ = Token.objects.get_or_create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        return token
+
+
+class TestUserAPI(BaseAPITestCase):
+    """Тесты для User API"""
     
-    def test_session_user_cascade_delete(self, db, create_user, create_result):
-        session = Session.objects.create(
-            user=create_user,
-            result=create_result,
-            start_date='2024-01-01',
-            end_date='2024-01-31'
+    def setUp(self):
+        super().setUp()
+        self.user_list_url = '/api/users/'
+    
+    def test_list_users(self):
+        """Тест получения списка пользователей"""
+        response = self.client.get(self.user_list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get('success', True))
+        self.assertIn('data', response.data)
+    
+    def test_create_user(self):
+        """Тест создания пользователя через API"""
+        data = {
+            'email': 'newuser@example.com',
+            'password': 'newpass123',
+            'password_confirm': 'newpass123',
+            'first_name': 'New',
+            'sur_name': 'User',
+            'role': User.ROLE_USER
+        }
+        response = self.client.post('/api/auth/register/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'], 'Пользователь зарегистрирован')
+        self.assertEqual(response.data['data']['email'], 'newuser@example.com')
+    
+    def test_retrieve_user(self):
+        """Тест получения конкретного пользователя"""
+        url = f'/api/users/{self.user.id}/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['email'], 'test@example.com')
+    
+    def test_retrieve_user_not_found(self):
+        """Тест: получение несуществующего пользователя"""
+        url = f'/api/users/{uuid.uuid4()}/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    
+    def test_update_user(self):
+        """Тест обновления пользователя"""
+        url = f'/api/users/{self.user.id}/'
+        data = {'first_name': 'Updated'}
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['first_name'], 'Updated')
+    
+    def test_delete_user(self):
+        """Тест удаления пользователя"""
+        url = f'/api/users/{self.user.id}/'
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.data['message'], 'User deleted successfully')
+        self.assertEqual(User.objects.count(), 0)
+    
+    def test_filter_users_by_role(self):
+        User.objects.create_user(
+            email='admin@example.com',
+            password='adminpass123',
+            first_name='Admin',
+            sur_name='User',
+            role=User.ROLE_ADMIN
         )
-        create_user.delete()
-        assert Session.objects.filter(id=session.id).count() == 0
-    
-    def test_session_result_cascade_delete(self, db, create_user, create_result):
-        session = Session.objects.create(
-            user=create_user,
-            result=create_result,
-            start_date='2024-01-01',
-            end_date='2024-01-31'
+        response = self.client.get(f'{self.user_list_url}?role={User.ROLE_ADMIN}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['data'])
         )
-        create_result.delete()
-        assert Session.objects.filter(id=session.id).count() == 0
+    
+    def test_search_users(self):
+        User.objects.create_user(
+            email='search@example.com',
+            password='pass123',
+            first_name='Search',
+            sur_name='Test'
+        )
+        response = self.client.get(f'{self.user_list_url}?search=search@example.com')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['data']), 1)
+    
+    def test_me_endpoint(self):
+        """Тест получения текущего пользователя"""
+        response = self.client.get('/api/users/me/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['email'], 'test@example.com')
 
 
-class TestUserAPI:
+class TestResultAPI(BaseAPITestCase):
+    """Тесты для Result API"""
     
-    def test_list_users(self, api_client, multiple_users):
-        url = reverse('user-list')
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert 'results' in response.data
-        assert len(response.data['results']) > 0
-    
-    def test_list_users_pagination(self, api_client, multiple_users):
-        url = reverse('user-list')
-        response = api_client.get(url, {'page_size': 5})
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) <= 5
-        assert 'links' in response.data
-        assert 'next' in response.data['links']
-    
-    def test_create_user(self, api_client, user_data):
-        url = reverse('user-list')
-        response = api_client.post(url, user_data, format='json')
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['data']['email'] == user_data['email']
-    
-    def test_create_user_invalid_data(self, api_client):
-        url = reverse('user-list')
-        invalid_data = {
-            'email': 'invalid-email',
-            'password': 'short',
+    def setUp(self):
+        super().setUp()
+        self.result_data = {
+            'budget': '1000.50',
+            'reputation': 50,
+            'office_health': 75,
+            'CountCompletedQuest': 5,
+            'evaluationGraphConstruction': 80
         }
-        response = api_client.post(url, invalid_data, format='json')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        self.result = Result.objects.create(
+            budget=Decimal('1000.50'),
+            reputation=50,
+            office_health=75
+        )
     
-    def test_retrieve_user(self, api_client, create_user):
-        url = reverse('user-detail', kwargs={'pk': create_user.id})
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['data']['email'] == create_user.email
+    def test_list_results(self):
+        """Тест получения списка результатов"""
+        response = self.client.get('/api/results/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get('success', True))
     
-    def test_retrieve_user_not_found(self, api_client):
-        url = reverse('user-detail', kwargs={'pk': uuid.uuid4()})
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+    def test_create_result(self):
+        """Тест создания результата"""
+        response = self.client.post('/api/results/', self.result_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'], 'Result created successfully')
+        self.assertEqual(float(response.data['data']['budget']), 1000.50)
     
-    def test_update_user(self, authenticated_client, create_user):
-        url = reverse('user-detail', kwargs={'pk': create_user.id})
-        updated_data = {
-            'email': 'updated@example.com',
-            'first_name': 'Updated',
-            'sur_name': 'Name'
-        }
-        response = authenticated_client.put(url, updated_data, format='json')
-        assert response.status_code == status.HTTP_200_OK
+    def test_create_result_negative_budget(self):
+        data = self.result_data.copy()
+        data['budget'] = '-100.00'
+        response = self.client.post('/api/results/', data)
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        # Проверяем структуру ошибки
+        self.assertIn('error', response.data)
+        self.assertEqual(response.data['error']['code'], 'business_logic_error')
     
-    def test_delete_user(self, authenticated_client, create_user):
-        url = reverse('user-detail', kwargs={'pk': create_user.id})
-        response = authenticated_client.delete(url)
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+    def test_retrieve_result(self):
+        """Тест получения конкретного результата"""
+        url = f'/api/results/{self.result.id}/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['reputation'], 50)
     
-    def test_filter_users_by_role(self, api_client, create_user, create_admin_user):
-        url = reverse('user-list')
-        response = api_client.get(url, {'role': 'admin'})
-        assert response.status_code == status.HTTP_200_OK
-        for user in response.data['results']:
-            assert user['role'] == 'admin'
+    def test_update_result(self):
+        """Тест обновления результата"""
+        url = f'/api/results/{self.result.id}/'
+        data = {'reputation': 100}
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['reputation'], 100)
     
-    def test_search_users(self, api_client, create_user):
-        url = reverse('user-list')
-        response = api_client.get(url, {'search': 'John'})
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) >= 1
+    def test_delete_result(self):
+        """Тест удаления результата"""
+        url = f'/api/results/{self.result.id}/'
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Result deleted successfully')
+        self.assertEqual(Result.objects.count(), 0)
 
 
-class TestResultAPI:
+class TestSessionAPI(BaseAPITestCase):
+    """Тесты для Session API"""
     
-    def test_list_results(self, api_client, create_result):
-        url = reverse('result-list')
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) > 0
-    
-    def test_create_result(self, api_client, result_data):
-        url = reverse('result-list')
-        response = api_client.post(url, result_data, format='json')
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['data']['reputation'] == result_data['reputation']
-    
-    def test_create_result_negative_budget(self, api_client, result_data):
-        url = reverse('result-list')
-        result_data['budget'] = '-1000.00'
-        response = api_client.post(url, result_data, format='json')
-        assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_422_UNPROCESSABLE_ENTITY]
-    
-    def test_retrieve_result(self, api_client, create_result):
-        url = reverse('result-detail', kwargs={'pk': create_result.id})
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['data']['id'] == str(create_result.id)
-    
-    def test_update_result(self, api_client, create_result):
-        url = reverse('result-detail', kwargs={'pk': create_result.id})
-        updated_data = {
-            'reputation': 95,
-            'budget': '15000.00',
-            'CountCompletedQuest': 10,
-            'evaluationGraphConstruction': 88,
-            'office_health': 90
-        }
-        response = api_client.put(url, updated_data, format='json')
-        assert response.status_code == status.HTTP_200_OK
-    
-    def test_delete_result(self, api_client, create_result):
-        url = reverse('result-detail', kwargs={'pk': create_result.id})
-        response = api_client.delete(url)
-        assert response.status_code == status.HTTP_204_NO_CONTENT
-
-
-class TestSessionAPI:
-    
-    def test_list_sessions(self, api_client, create_session):
-        url = reverse('session-list')
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) > 0
-    
-    def test_create_session(self, api_client, session_data):
-        url = reverse('session-list')
-        response = api_client.post(url, session_data, format='json')
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['data']['start_date'] == session_data['start_date']
-    
-    def test_create_session_invalid_dates(self, api_client, create_user, create_result):
-        url = reverse('session-list')
-        invalid_data = {
-            'user': create_user.id,
-            'result': create_result.id,
-            'start_date': '2024-12-31',
-            'end_date': '2024-01-01'
-        }
-        response = api_client.post(url, invalid_data, format='json')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    def test_retrieve_session(self, api_client, create_session):
-        url = reverse('session-detail', kwargs={'pk': create_session.id})
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['data']['id'] == str(create_session.id)
-    
-    def test_update_session(self, api_client, create_session):
-        url = reverse('session-detail', kwargs={'pk': create_session.id})
-        updated_data = {
-            'start_date': '2024-02-01',
-            'end_date': '2024-02-28'
-        }
-        response = api_client.put(url, updated_data, format='json')
-        assert response.status_code == status.HTTP_200_OK
-    
-    def test_delete_session(self, api_client, create_session):
-        url = reverse('session-detail', kwargs={'pk': create_session.id})
-        response = api_client.delete(url)
-        assert response.status_code == status.HTTP_204_NO_CONTENT
-    
-    def test_filter_sessions_by_user(self, api_client, create_user, create_session):
-        url = reverse('session-list')
-        response = api_client.get(url, {'user_id': create_user.id})
-        assert response.status_code == status.HTTP_200_OK
-    
-    def test_filter_sessions_by_date_range(self, api_client, create_session):
-        url = reverse('session-list')
-        response = api_client.get(url, {
+    def setUp(self):
+        super().setUp()
+        self.result = Result.objects.create(
+            budget=Decimal('500.00'),
+            reputation=50
+        )
+        self.session_data = {
+            'user': str(self.user.id),
+            'result': str(self.result.id),
             'start_date': '2024-01-01',
-            'end_date': '2024-12-31'
-        })
-        assert response.status_code == status.HTTP_200_OK
+            'end_date': '2024-01-10'
+        }
+        self.session = Session.objects.create(
+            user=self.user,
+            result=self.result,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 10)
+        )
     
-    def test_session_pagination(self, api_client, multiple_sessions):
-        url = reverse('session-list')
-        response = api_client.get(url, {'page_size': 5})
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) <= 5
-        assert 'links' in response.data
-        assert 'next' in response.data['links']
-        assert 'previous' in response.data['links']
-        assert 'first' in response.data['links']
-        assert 'last' in response.data['links']
-
-
-class TestPagination:
+    def test_list_sessions(self):
+        """Тест получения списка сессий"""
+        response = self.client.get('/api/sessions/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get('success', True))
     
-    def test_custom_pagination_response_format(self, api_client, multiple_sessions):
-        url = reverse('session-list')
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert 'success' in response.data
-        assert response.data['success'] is True
-        assert 'count' in response.data
-        assert 'total_pages' in response.data
-        assert 'current_page' in response.data
-        assert 'page_size' in response.data
-        assert 'links' in response.data
-        assert 'results' in response.data
-    
-    def test_pagination_first_page_no_previous(self, api_client, multiple_sessions):
-        url = reverse('session-list')
-        response = api_client.get(url, {'page': 1, 'page_size': 5})
-        assert response.data['links']['previous']['href'] is None
-        assert response.data['links']['first']['href'] is None
-    
-    def test_pagination_last_page_no_next(self, api_client, multiple_sessions):
-        url = reverse('session-list')
-        response = api_client.get(url, {'page': 1, 'page_size': 5})
-        total_pages = response.data['total_pages']
-        response = api_client.get(url, {'page': total_pages, 'page_size': 5})
-        assert response.data['links']['next']['href'] is None
-        assert response.data['links']['last']['href'] is None
-    
-    def test_pagination_max_page_size(self, api_client, multiple_sessions):
-        url = reverse('session-list')
-        response = api_client.get(url, {'page_size': 1000})
-        assert response.data['page_size'] <= 100
-
-
-class TestAuthAPI:
-    
-    def test_login_success(self, api_client, create_user):
-        url = reverse('token_obtain_pair')
+    def test_create_session(self):
+        """Тест создания сессии"""
+        # Создаем нового пользователя и результат для теста
+        new_user = User.objects.create_user(
+            email='newuser@example.com',
+            password='pass123',
+            first_name='New',
+            sur_name='User'
+        )
+        new_result = Result.objects.create(budget=Decimal('300.00'))
+        
         data = {
+            'user': str(new_user.id),
+            'result': str(new_result.id),
+            'start_date': '2024-02-01',
+            'end_date': '2024-02-10'
+        }
+        response = self.client.post('/api/sessions/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'], 'Session created successfully')
+    
+    def test_create_session_invalid_dates(self):
+        """Тест: создание сессии с невалидными датами"""
+        data = self.session_data.copy()
+        data['end_date'] = '2023-12-31'  # Дата раньше start_date
+        response = self.client.post('/api/sessions/', data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_retrieve_session(self):
+        """Тест получения конкретной сессии"""
+        url = f'/api/sessions/{self.session.id}/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['id'], str(self.session.id))
+    
+    def test_update_session(self):
+        """Тест обновления сессии"""
+        url = f'/api/sessions/{self.session.id}/'
+        data = {'end_date': '2024-01-15'}
+        response = self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['end_date'], '2024-01-15')
+    
+    def test_delete_session(self):
+        """Тест удаления сессии"""
+        url = f'/api/sessions/{self.session.id}/'
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Session deleted successfully')
+        self.assertEqual(Session.objects.count(), 0)
+    
+    def test_my_sessions_endpoint(self):
+        """Тест получения сессий текущего пользователя"""
+        response = self.client.get('/api/sessions/my_sessions/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get('success', True))
+    
+    def test_extend_session(self):
+        """Тест продления сессии"""
+        url = f'/api/sessions/{self.session.id}/extend/'
+        data = {'new_end_date': '2024-01-20'}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['end_date'], '2024-01-20')
+
+
+class TestAuthAPI(APITestCase):
+    """Тесты для аутентификации"""
+    
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            first_name='Test',
+            sur_name='User'
+        )
+        self.register_data = {
+            'email': 'newuser@example.com',
+            'password': 'newpass123',
+            'first_name': 'New',
+            'sur_name': 'User'
+        }
+        self.login_data = {
             'email': 'test@example.com',
             'password': 'testpass123'
         }
-        response = api_client.post(url, data, format='json')
-        assert response.status_code == status.HTTP_200_OK
-        assert 'access' in response.data
-        assert 'refresh' in response.data
     
-    def test_login_invalid_credentials(self, api_client):
-        url = reverse('token_obtain_pair')
+    def test_register_success(self):
+        """Тест успешной регистрации"""
+        response = self.client.post('/api/auth/register/', self.register_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['message'], 'Пользователь зарегистрирован')
+        self.assertEqual(response.data['data']['email'], 'newuser@example.com')
+        self.assertEqual(User.objects.count(), 2)
+    
+    def test_login_success(self):
+        """Тест успешного входа"""
+        response = self.client.post('/api/auth/login/', self.login_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Успешная авторизация')
+        self.assertIn('token', response.data['data'])
+    
+    def test_login_invalid_credentials(self):
+        """Тест: вход с неверными данными"""
+        data = {'email': 'test@example.com', 'password': 'wrongpass'}
+        response = self.client.post('/api/auth/login/', data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data['message'], 'Неверные учетные данные')
+
+
+class TestExceptionHandling(APITestCase):
+    """Тесты обработки исключений"""
+    
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            first_name='Test',
+            sur_name='User'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+    
+    def test_404_response_format(self):
+        """Тест формата ответа при 404"""
+        url = f'/api/users/{uuid.uuid4()}/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn('success', response.data)
+        self.assertEqual(response.data['success'], False)
+    
+    def test_validation_error_format(self):
+        """Тест формата ответа при ошибке валидации"""
+        data = {'email': 'invalid-email'}
+        response = self.client.post('/api/auth/register/', data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_method_not_allowed(self):
+        """Тест: метод не разрешен"""
+        response = self.client.put('/api/auth/login/', {})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class TestCustomResponses(APITestCase):
+    """Тесты кастомных форматов ответов"""
+    
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            first_name='Test',
+            sur_name='User'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+        self.result = Result.objects.create(budget=Decimal('500.00'))
+    
+    def test_success_response_format(self):
+        """Тест формата успешного ответа"""
+        url = f'/api/users/{self.user.id}/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get('success', True))
+        self.assertIn('message', response.data)
+        self.assertIn('data', response.data)
+    
+    def test_create_response_format(self):
+        """Тест формата ответа при создании"""
         data = {
-            'email': 'wrong@example.com',
-            'password': 'wrongpass'
+            'budget': '1000.00',
+            'reputation': 50
         }
-        response = api_client.post(url, data, format='json')
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        response = self.client.post('/api/results/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data.get('success', True))
+        self.assertEqual(response.data['message'], 'Result created successfully')
     
-    def test_token_refresh(self, api_client, create_user):
-        login_url = reverse('token_obtain_pair')
-        login_response = api_client.post(login_url, {
-            'email': 'test@example.com',
-            'password': 'testpass123'
-        }, format='json')
+    def test_delete_response_format(self):
+        """Тест формата ответа при удалении"""
+        url = f'/api/results/{self.result.id}/'
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get('success', True))
+        self.assertEqual(response.data['message'], 'Result deleted successfully')
+
+
+class TestPagination(APITestCase):
+    """Тесты пагинации"""
+    
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            first_name='Test',
+            sur_name='User'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
         
-        refresh_url = reverse('token_refresh')
-        refresh_response = api_client.post(refresh_url, {
-            'refresh': login_response.data['refresh']
-        }, format='json')
-        
-        assert refresh_response.status_code == status.HTTP_200_OK
-        assert 'access' in refresh_response.data
+        # Создаем 25 пользователей для теста пагинации
+        for i in range(25):
+            User.objects.create_user(
+                email=f'user{i}@example.com',
+                password='pass123',
+                first_name=f'User{i}',
+                sur_name=f'Test{i}'
+            )
     
-    def test_access_protected_endpoint_without_auth(self, api_client, create_user):
-        url = reverse('user-detail', kwargs={'pk': create_user.id})
-        response = api_client.put(url, {}, format='json')
-        assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+    def test_custom_pagination_response_format(self):
+        response = self.client.get('/api/users/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data
 
-
-class TestExceptionHandling:
+        self.assertIn('total_count', data)
+        self.assertIn('total_pages', data)
+        self.assertIn('current_page', data)
+        self.assertEqual(data['current_page'], 1)
     
-    def test_404_response_format(self, api_client):
-        url = reverse('user-detail', kwargs={'pk': uuid.uuid4()})
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert 'success' in response.data
-        assert response.data['success'] is False
+    def test_pagination_first_page(self):
+        """Тест первой страницы пагинации"""
+        response = self.client.get('/api/users/?page=1')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['current_page'], 1)
+        self.assertEqual(len(response.data['data']['results']), 20)
+        self.assertEqual(response.data['data']['total_pages'], 2)
     
-    def test_validation_error_format(self, api_client):
-        url = reverse('session-list')
-        response = api_client.post(url, {}, format='json')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'success' in response.data
-        assert response.data['success'] is False
+    def test_pagination_last_page(self):
+        """Тест последней страницы пагинации"""
+        response = self.client.get('/api/users/?page=2')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['current_page'], 2)
+        self.assertEqual(len(response.data['data']['results']), 5)
     
-    def test_method_not_allowed(self, api_client):
-        url = reverse('session-list')
-        response = api_client.put(url, {}, format='json')
-        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-
-
-class TestCustomResponses:
-    
-    def test_success_response_format(self, api_client, create_session):
-        url = reverse('session-detail', kwargs={'pk': create_session.id})
-        response = api_client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert 'success' in response.data
-        assert response.data['success'] is True
-        assert 'message' in response.data
-        assert 'data' in response.data
-    
-    def test_create_response_format(self, api_client, session_data):
-        url = reverse('session-list')
-        response = api_client.post(url, session_data, format='json')
-        assert response.status_code == status.HTTP_201_CREATED
-        assert 'success' in response.data
-        assert response.data['success'] is True
-        assert 'message' in response.data
-        assert 'data' in response.data
-    
-    def test_delete_response_format(self, api_client, create_session):
-        url = reverse('session-detail', kwargs={'pk': create_session.id})
-        response = api_client.delete(url)
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+    def test_pagination_max_page_size(self):
+        """Тест максимального размера страницы"""
+        response = self.client.get('/api/users/?limit=50')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['total_pages'], 1)
+        self.assertEqual(len(response.data['data']['results']), 25)

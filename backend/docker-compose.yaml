@@ -34,15 +34,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=1
-      - SECRET_KEY=django-insecure-jy*g7#*af)6emgnv+1r+8@%$l36bt&^5-#kh%$*%ey4#9(3_q@
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[::1]
-      - DATABASE_ENGINE=django.db.backends.postgresql
-      - DATABASE_NAME=drf_db
-      - DATABASE_USER=drf_user
-      - DATABASE_PASSWORD=drf_password
-      - DATABASE_HOST=db
-      - DATABASE_PORT=5432
+      - DEBUG=${DEBUG}
+      - SECRET_KEY=${SECRET_KEY}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - DATABASE_ENGINE=${DATABASE_ENGINE}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
     depends_on:
       db:
         condition: service_healthy
