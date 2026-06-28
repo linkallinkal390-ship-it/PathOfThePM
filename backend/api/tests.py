@@ -61,13 +61,13 @@ class TestUserModel(TestCase):
     
     def test_user_email_normalized(self):
         user = User.objects.create_user(
-           email='Test@Example.COM',
+           email='Test@example.COM',
            password='testpass123',
            first_name='Test',
            sur_name='User'
         )
         #Ваша модель сохраняет как есть
-        self.assertEqual(user.email, 'Test@Example.COM')
+        self.assertEqual(user.email, 'Test@example.COM')
 
 
 class TestResultModel(TestCase):

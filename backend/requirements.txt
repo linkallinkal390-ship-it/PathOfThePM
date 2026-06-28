@@ -5,6 +5,5 @@ django-cors-headers
 python-decouple
 psycopg2-binary
 drf_spectacular
-rest_framework-simplejwt
 pytest
 pytest-django
