@@ -1,3 +1,4 @@
+# Цель №3
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import (
     APIException, 
@@ -174,14 +175,9 @@ class ServerError(BaseCustomException):
 
 
 def custom_exception_handler(exc, context):
-    """
-    Кастомный обработчик исключений
-    """
-    # Сначала получаем стандартный ответ DRF
     response = exception_handler(exc, context)
     
     if response is not None:
-        # Кастомный формат ошибки
         custom_response_data = {
             'success': False,
             'error': {

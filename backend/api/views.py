@@ -1,3 +1,4 @@
+# Цель №2
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -94,15 +95,8 @@ class LoginView(APIView):
 
 
 
-class BaseViewSet(viewsets.ModelViewSet):
-    """
-    Базовый ViewSet с кастомными методами ответа
-    """
-    
+class BaseViewSet(viewsets.ModelViewSet):  
     def handle_exception(self, exc):
-        """
-        Обработка исключений
-        """
         if isinstance(exc, (SessionNotFoundException, ResultNotFoundException, 
                            UserNotFoundException)):
             return not_found_response(resource_name=exc.default_detail.split(' ')[0])
@@ -206,9 +200,6 @@ class UserViewSet(BaseViewSet):
         )
 
 class ResultViewSet(BaseViewSet):
-    """
-    ViewSet для работы с результатами
-    """
     queryset = Result.objects.all()
     serializer_class = ResultSerializer
     pagination_class = CustomPageNumberPagination
@@ -218,9 +209,6 @@ class ResultViewSet(BaseViewSet):
     ordering = ['-finalConstructionDate']
     
     def retrieve(self, request, *args, **kwargs):
-        """
-        Получить результат по ID
-        """
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance)
@@ -232,23 +220,17 @@ class ResultViewSet(BaseViewSet):
             raise ResultNotFoundException()
     
     def create(self, request, *args, **kwargs):
-        """
-        Создать новый результат
-        """
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             return validation_error_response(
                 errors=serializer.errors,
                 message='Validation error'
             )
-        
-        # Проверка бизнес-логики
         budget = serializer.validated_data.get('budget', 0)
         if budget < 0:
             raise BusinessLogicError(
                 detail={'error': {'message': 'Budget cannot be negative', 'errors': []}}
             )
-        
         self.perform_create(serializer)
         return created_response(
             data=serializer.data,
@@ -256,9 +238,6 @@ class ResultViewSet(BaseViewSet):
         )
     
     def update(self, request, *args, **kwargs):
-        """
-        Обновить результат
-        """
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -276,18 +255,12 @@ class ResultViewSet(BaseViewSet):
         )
     
     def destroy(self, request, *args, **kwargs):
-        """
-        Удалить результат
-        """
         instance = self.get_object()
         self.perform_destroy(instance)
         return deleted_response(message='Result deleted successfully')
     
 
 class SessionViewSet(BaseViewSet):
-    """
-    ViewSet для работы с сессиями
-    """
     queryset = Session.objects.all().select_related('user', 'result')
     serializer_class = SessionSerializer
     pagination_class = CustomPageNumberPagination
@@ -297,9 +270,6 @@ class SessionViewSet(BaseViewSet):
     ordering = ['-start_date']
     
     def get_serializer_class(self):
-        """
-        Разные сериалайзеры для разных действий
-        """
         if self.action == 'create':
             return SessionCreateSerializer
         elif self.action in ['update', 'partial_update']:
@@ -325,9 +295,6 @@ class SessionViewSet(BaseViewSet):
         return queryset
     
     def retrieve(self, request, *args, **kwargs):
-        """
-        Получить сессию по ID
-        """
         try:
             instance = self.get_object()
             serializer = self.get_serializer(instance)
@@ -339,12 +306,8 @@ class SessionViewSet(BaseViewSet):
             raise SessionNotFoundException()
     
     def create(self, request, *args, **kwargs):
-        """
-        Создать новую сессию
-        """
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            # Проверка на конфликт дат
             start_date = serializer.validated_data.get('start_date')
             end_date = serializer.validated_data.get('end_date')
             user = serializer.validated_data.get('user')
@@ -368,9 +331,6 @@ class SessionViewSet(BaseViewSet):
         raise SessionValidationError(detail='Validation error', errors=serializer.errors)
     
     def update(self, request, *args, **kwargs):
-        """
-        Обновить сессию
-        """
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -384,9 +344,6 @@ class SessionViewSet(BaseViewSet):
         raise SessionUpdateError(detail='Validation error', errors=serializer.errors)
     
     def destroy(self, request, *args, **kwargs):
-        """
-        Удалить сессию
-        """
         try:
             instance = self.get_object()
             self.perform_destroy(instance)
@@ -398,13 +355,8 @@ class SessionViewSet(BaseViewSet):
     
     @action(detail=True, methods=['get'])
     def details(self, request, pk=None):
-        """
-        Получить детальную информацию о сессии
-        """
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        
-        # Дополнительная информация
         detailed_data = serializer.data
         detailed_data['user_details'] = {
             'email': instance.user.email,
@@ -422,9 +374,6 @@ class SessionViewSet(BaseViewSet):
     
     @action(detail=False, methods=['get'])
     def my_sessions(self, request):
-        """
-        Получить сессии текущего пользователя
-        """
         if not request.user.is_authenticated:
             raise UnauthorizedAccessError()
         
@@ -443,9 +392,6 @@ class SessionViewSet(BaseViewSet):
     
     @action(detail=False, methods=['get'])
     def by_date_range(self, request):
-        """
-        Получить сессии за период
-        """
         from_date = request.query_params.get('from_date')
         to_date = request.query_params.get('to_date')
         
@@ -474,9 +420,6 @@ class SessionViewSet(BaseViewSet):
     
     @action(detail=True, methods=['post'])
     def extend(self, request, pk=None):
-        """
-        Продлить сессию
-        """
         instance = self.get_object()
         new_end_date = request.data.get('new_end_date')
         
@@ -487,7 +430,6 @@ class SessionViewSet(BaseViewSet):
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         
-        # Проверка бизнес-логики
         if new_end_date <= str(instance.end_date):
             raise BusinessLogicError(detail='New end date must be after current end date')
         

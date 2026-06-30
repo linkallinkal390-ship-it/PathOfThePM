@@ -1,3 +1,5 @@
+# Цель
+
 import uuid
 from datetime import date, timedelta
 from django.test import TestCase
@@ -303,7 +305,6 @@ class TestResultAPI(BaseAPITestCase):
         data['budget'] = '-100.00'
         response = self.client.post('/api/results/', data)
         self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
-        # Проверяем структуру ошибки
         self.assertIn('error', response.data)
         self.assertEqual(response.data['error']['code'], 'business_logic_error')
     
@@ -361,7 +362,6 @@ class TestSessionAPI(BaseAPITestCase):
     
     def test_create_session(self):
         """Тест создания сессии"""
-        # Создаем нового пользователя и результат для теста
         new_user = User.objects.create_user(
             email='newuser@example.com',
             password='pass123',
@@ -383,7 +383,7 @@ class TestSessionAPI(BaseAPITestCase):
     def test_create_session_invalid_dates(self):
         """Тест: создание сессии с невалидными датами"""
         data = self.session_data.copy()
-        data['end_date'] = '2023-12-31'  # Дата раньше start_date
+        data['end_date'] = '2023-12-31'
         response = self.client.post('/api/sessions/', data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
     

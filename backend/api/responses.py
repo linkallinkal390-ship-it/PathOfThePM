@@ -1,3 +1,4 @@
+# Цель №4
 from rest_framework.response import Response
 from rest_framework import status
 from collections import OrderedDict
@@ -19,7 +20,6 @@ class APIResponse(Response):
             
         if data is not None:
             if isinstance(data, dict) and 'results' in data:
-                # Для пагинированных ответов
                 response_data.update(data)
             elif isinstance(data, dict):
                 response_data['data'] = data
@@ -28,8 +28,6 @@ class APIResponse(Response):
                 response_data['count'] = len(data)
             else:
                 response_data['data'] = data
-        
-        # Добавляем дополнительные поля
         response_data.update(kwargs)
         
         super().__init__(

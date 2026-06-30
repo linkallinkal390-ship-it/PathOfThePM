@@ -41,11 +41,12 @@ services:
       - DATABASE_NAME=${DATABASE_NAME}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_HOST=db
       - DATABASE_PORT=${DATABASE_PORT}
     depends_on:
       db:
         condition: service_healthy
+        
     networks:
       - drf_network
 
